@@ -127,6 +127,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File build.ps1
 The build refuses to produce an installer that contains non-ASCII characters, does not
 parse as PowerShell, or embeds JavaScript that does not parse.
 
+## Related
+
+[claude-code-tts](https://github.com/spyrad/claude-code-tts) - makes Claude Code read its
+answers aloud on Windows, built the same way.
+
 ## License
 
 MIT
