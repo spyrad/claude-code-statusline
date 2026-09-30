@@ -420,6 +420,13 @@ if (resetsAt) {
 // --- Session-Laufzeit ---
 const durMs = Number(data?.cost?.total_duration_ms ?? 0);
 
+// --- Herdr-Pane ---
+// Herdr setzt HERDR_ENV und HERDR_PANE_ID in jeder verwalteten Pane; die
+// Statusline erbt sie von Claude Code, ein `herdr`-Aufruf ist nicht noetig.
+// Nach `herdr pane move` bleibt hier die alte ID stehen - die Umgebung
+// eines laufenden Prozesses aendert sich nicht.
+const herdrPane = process.env.HERDR_ENV === '1' ? process.env.HERDR_PANE_ID || null : null;
+
 // ---------------------------------------------------------------- Ausgabe
 
 const sep = `  ${DIM}${GLYPHS.pipe}${R}  `;
@@ -427,7 +434,7 @@ const dot = `  ${DIM}${GLYPHS.dot}${R}  `;
 const L = (s) => `${DIM}${s.padEnd(8)}${R}`;          // buendige Label-Spalte
 const pctCol = (v) => `${Math.round(v)}%`.padStart(4); // 3 Stellen + %, Balken springt nicht
 
-// --- Zeile 1: Modell, Repo/Branch, Laufzeit ---
+// --- Zeile 1: Modell, Repo/Branch, Laufzeit, Herdr-Pane ---
 const repoName = data?.workspace?.repo?.name ?? (cwd ? path.basename(cwd) : null);
 const place = repoName
   ? `${c('37', repoName)}${branch ? ` ${DIM}${GLYPHS.branch}${R} ${c('37', branch)}` : ''}`
@@ -437,6 +444,7 @@ const line1 = [
   L('Model') + c('37', BOLD + shortModel(model)),
   place,
   `${DIM}Laufzeit ${R}${c('37', fmtDuration(durMs))}`,
+  herdrPane ? `${DIM}herdr ${R}${c('37', herdrPane)}` : null,
 ].filter(Boolean).join(sep);
 
 // --- Zeile 2: 5h-Fenster (verstrichene Zeit) + Auslastung ---

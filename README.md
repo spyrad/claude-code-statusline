@@ -50,7 +50,10 @@ Running the installer again is safe. It detects an existing entry, backs up
 
 **Line 1** — the model (shortened, `Opus 5 (1M context)` becomes `Opus 5 · 1M`), the
 repository name with the current branch, and how long this session has been running.
-Outside a git repository the folder name is shown without a branch.
+Outside a git repository the folder name is shown without a branch. When Claude Code runs
+inside a Herdr pane, the pane ID (`herdr wF:p1`) is appended, read
+from `HERDR_PANE_ID` without calling `herdr`. After `herdr pane move` it keeps showing the
+old ID until Claude Code restarts, because a running process's environment does not change.
 
 **Line 2** — how much of the five-hour rate-limit window has elapsed, how long is left,
 your usage against the five-hour and seven-day limits, and the consumption ratio
