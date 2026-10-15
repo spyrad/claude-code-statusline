@@ -410,14 +410,14 @@ const pctCol = (v) => `${Math.round(v)}%`.padStart(4); // 3 Stellen + %, Balken 
 // --- Zeile 1: Modell, Repo/Branch, Laufzeit, Herdr-Pane ---
 const repoName = data?.workspace?.repo?.name ?? (cwd ? path.basename(cwd) : null);
 const place = repoName
-  ? `${c('37', repoName)}${branch ? ` ${DIM}${GLYPHS.branch}${R} ${c('37', branch)}` : ''}`
+  ? `${c('97', repoName)}${branch ? ` ${DIM}${GLYPHS.branch}${R} ${c('97', branch)}` : ''}`
   : null;
 
 const line1 = [
-  L('Model') + c('37', BOLD + shortModel(model)),
+  L('Model') + c('97', BOLD + shortModel(model)),
   place,
-  `${DIM}Laufzeit ${R}${c('37', fmtDuration(durMs))}`,
-  herdrPane ? `${DIM}herdr ${R}${c('37', herdrPane)}` : null,
+  `${DIM}Laufzeit ${R}${c('97', fmtDuration(durMs))}`,
+  herdrPane ? `${DIM}herdr ${R}${c('97', herdrPane)}` : null,
 ].filter(Boolean).join(sep);
 
 // --- Zeile 2: 5h-Fenster (verstrichene Zeit) + Auslastung ---
@@ -440,7 +440,7 @@ const weekStr = weekPct != null ? c(loadColor(weekPct), `${Math.round(weekPct)}%
 
 const windowPart =
   elapsedPct != null
-    ? `[${bar(elapsedPct, 14, '37')}] ${c('37', pctCol(elapsedPct))}  ${DIM}noch ${fmtDuration(remainMs)}${R}`
+    ? `[${bar(elapsedPct, 14, '97')}] ${c('97', pctCol(elapsedPct))}  ${DIM}noch ${fmtDuration(remainMs)}${R}`
     : c('90', 'n/a');
 
 const line2 =
@@ -456,8 +456,8 @@ const line3 =
 
 // --- Zeile 4: Kosten (nur bei SHOW_COSTS; Woche wird berechnet, aber nicht gezeigt) ---
 const line4 = SHOW_COSTS
-  ? L('Kosten') + `${DIM}Session ${R}${c('37', usd(costs.session))}` +
-    `${dot}${DIM}Monat ${R}${c('37', usd(costs.month))}` +
+  ? L('Kosten') + `${DIM}Session ${R}${c('97', usd(costs.session))}` +
+    `${dot}${DIM}Monat ${R}${c('97', usd(costs.month))}` +
     (costs.partial ? ` ${DIM}(scan${GLYPHS.ellipsis})${R}` : '')
   : null;
 
