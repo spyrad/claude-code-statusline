@@ -1,13 +1,15 @@
 # claude-code-statusline
 
-A status line for [Claude Code](https://claude.com/claude-code) on Windows. Three lines
-telling you what model you are on, where you are, how much of your rate-limit window is
-left, and how full the context is.
+A status line for [Claude Code](https://claude.com/claude-code), built as a mod. Three
+lines below the prompt telling you what model you are on, where you are, how much of your
+rate-limit window is left, how full the context is, and how long the prompt cache stays
+warm.
 
 ```
-Model   Opus 5 · 1M  │  claude-code-statusline ⎇ main  │  Laufzeit 59m02s
+Model   Opus 5.5 · 1M  │  claude-code-statusline ⎇ main  │  Laufzeit 59m02s  │  Kosten $2,30
 Fenster [▰▰▰▰▰▰▰▰▰▰▰▱▱▱]  82%  noch 55m02s  ·  Session 11% (0,13×)  ·  Woche 5%
-Context [▰▱▱▱▱▱▱▱▱▱▱▱▱▱]   8%  87,2k/1,0M
+Context [▰▱▱▱▱▱▱▱▱▱▱▱▱▱]   8%  87,2k/1,0M  ·  Cache 1h warm noch 42m10s
+? for shortcuts
 ```
 
 The number in brackets after `Session` is the part worth explaining: it is your token
@@ -17,147 +19,82 @@ into the limit before the window resets. Green below 0.9, yellow up to 1.1, red 
 
 ## Install
 
-Double-click `install.cmd`, or run:
+At the prompt of a Claude Code terminal session:
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File install.ps1
+```
+/plugin install statusline-mod --marketplace spyrad/claude-code-statusline
 ```
 
-Without cloning:
+Answer `y` to add the marketplace, then pick a scope (user scope loads it in every
+session). From a shell, the same is:
 
-```powershell
-& ([scriptblock]::Create((irm https://raw.githubusercontent.com/spyrad/claude-code-statusline/main/install.ps1)))
+```
+claude plugin install statusline-mod --marketplace spyrad/claude-code-statusline
 ```
 
-Then open `/statusline` in Claude Code once, or restart it.
+If you still have the old command status line from an earlier version of this repository,
+remove the `statusLine` entry from `~/.claude/settings.json`, or both will show.
 
-Requires Node.js 18 or newer — the status line is a Node script that Claude Code runs on
-every redraw. The installer checks for it and stops with a pointer if it is missing.
-
-## Options
-
-| Option | Effect |
-|---|---|
-| `-ShowCosts` | Add a fourth line estimating spend for this session and the last 30 days |
-| `-NoTest` | Skip the sample render at the end of the install |
-| `-Uninstall` | Remove the status line entry and the script |
-| `-ClaudeDir <path>` | Install somewhere other than `~/.claude` |
-
-Running the installer again is safe. It detects an existing entry, backs up
-`settings.json` before touching it, and leaves every other setting alone.
+Mods are early access: the API may change between Claude Code releases. The lines draw in
+the terminal and the desktop app only.
 
 ## What the lines show
 
-**Line 1** — the model (shortened, `Opus 5 (1M context)` becomes `Opus 5 · 1M`), the
-repository name with the current branch, and how long this session has been running.
-Outside a git repository the folder name is shown without a branch. When Claude Code runs
-inside a Herdr pane, the pane ID (`herdr wF:p1`) is appended, read
-from `HERDR_PANE_ID` without calling `herdr`. After `herdr pane move` it keeps showing the
-old ID until Claude Code restarts, because a running process's environment does not change.
+**Line 1** — the model (shortened, `claude-opus-5-5[1m]` becomes `Opus 5.5 · 1M`), the
+folder name with the current branch, how long this session has been running, and what it
+has cost so far. Outside a git repository the folder name is shown without a branch. When
+Claude Code runs inside a Herdr pane, the pane ID (`herdr w3:p1`) is appended, read from
+`HERDR_PANE_ID`.
 
 **Line 2** — how much of the five-hour rate-limit window has elapsed, how long is left,
 your usage against the five-hour and seven-day limits, and the consumption ratio
 described above. The window bar is deliberately neutral: it shows time, not load.
 
 **Line 3** — context usage, as a bar, a percentage, and tokens used against the window
-size.
+size; then the prompt cache: its lifetime (`5m` or `1h`) and how long it stays warm after
+the last request, or how long it has been cold. Until the lifetime is known it shows
+`5m?`.
 
-**Line 4**, only with `-ShowCosts` — estimated spend for this session and the last 30
-days, based on public API list prices. Treat it as an order of magnitude, not a bill.
+**Line 4** — Claude Code's own hint line (`? for shortcuts`, `esc to interrupt`), dimmed.
+The mod draws in its place, because that is the only spot below the prompt a mod can
+draw.
+
+The numbers refresh every five seconds, so the clock and the cache countdown keep running
+between turns.
 
 ## Privacy
 
 Everything runs locally and nothing is sent anywhere.
 
-The cost line is the one part that reads beyond its own configuration: it opens the
-transcript files under `~/.claude/projects/**/*.jsonl` to sum up token counts. It reads
-token usage and model names, not the content of your conversations, and it writes a cache
-to `~/.claude/statusline-cost-cache.json` so each run only reads what was appended since
-last time. If you would rather it did not open those files at all, leave `-ShowCosts` off
-— then the scan never runs.
-
-## How it works
-
-Claude Code writes a JSON blob to the status line command's stdin on every redraw and
-renders whatever comes back. `statusline.mjs` parses it and prints three or four lines
-with ANSI colors.
-
-Two details worth knowing:
-
-The branch comes from reading `.git/HEAD` directly rather than shelling out to `git`. A
-redraw happens constantly, and spawning a process each time would be noticeable. The
-trade-off is that there is no dirty marker — that would need `git status`.
-
-Every glyph in `statusline.mjs` is written as a `\uXXXX` escape so the file stays pure
-ASCII. `build.ps1` enforces this, because the installer embeds the script and the
-`irm | scriptblock` one-liner must not depend on a BOM or the active code page. To change
-the bar style, edit `barFull` and `barEmpty` in the `GLYPHS` object.
+To learn the cache lifetime, the mod reads the current session's transcript
+(`~/.claude/projects/<project>/<session>.jsonl`, up to 4 MiB) and looks only at the
+cache-write token counts. The branch comes from reading `.git/HEAD` directly.
 
 ## Uninstall
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File install.ps1 -Uninstall
 ```
-
-Removes the script, the cost cache, and the `statusLine` entry — but only if that entry
-points at this installation. A status line someone else configured is left alone.
-
-## Troubleshooting
-
-**Nothing appears.** Open `/statusline` in Claude Code once, or restart it. Claude Code
-reads the setting at startup.
-
-**The bars show as boxes or question marks.** Your terminal font has no glyph for `▰`.
-Change `barFull` and `barEmpty` in `~/.claude/statusline.mjs` to `#` and `-`, or install a
-font with better coverage.
-
-**`node is not recognized`.** Node is not on `PATH` for the shell Claude Code uses. Open a
-new terminal after installing Node, then run the installer again so it records the full
-path.
-
-**The cost line says `(scan…)`.** The cache is still being built. It scans within a time
-budget per run and picks up where it left off, so the number settles after a few redraws.
-
-## Mod variant (early access)
-
-`mod/` holds the same three lines as a Claude Code mod instead of a command. It draws
-below the prompt in place of the hint line (`? for shortcuts`, which follows dimmed as a
-fourth row), refreshes every five seconds, takes its numbers from the session directly
-and adds a prompt-cache countdown to line 3 (`Cache 1h warm noch 42m10s`). It has no cost
-line beyond the session's own spend, and it draws on the terminal and desktop app only.
-
-Load it in every session by naming the folder in the `env` block of
-`~/.claude/settings.json`, and remove the `statusLine` entry so the lines do not show
-twice:
-
-```json
-"env": {
-  "CLAUDE_CODE_PLUGIN_DIRS": "C:\\path\\to\\claude-code-statusline\\mod"
-}
+/plugin uninstall statusline-mod
 ```
-
-To work out the cache's lifetime it reads the current session's transcript
-(`~/.claude/projects/<project>/<session>.jsonl`, up to 4 MiB) and looks only at the
-cache-write token counts. Nothing leaves the machine.
-
-Check and test it with `claude plugin validate mod` and `claude plugin test mod`.
 
 ## Development
 
-Sources live in `src/`. `install.ps1` is generated — edit `src/install-template.ps1` and
-`src/statusline.mjs`, then rebuild:
+The mod lives in `mod/`; `.claude-plugin/marketplace.json` makes the repository
+installable. To run a working copy, name its folder in the `env` block of
+`~/.claude/settings.json` (`"CLAUDE_CODE_PLUGIN_DIRS": "C:\\path\\to\\mod"`) instead of
+installing it; saving a file then reloads it. Check and test it with:
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File build.ps1
+```
+claude plugin validate .
+claude plugin test mod
 ```
 
-The build refuses to produce an installer that contains non-ASCII characters, does not
-parse as PowerShell, or embeds JavaScript that does not parse.
+The old command version (`statusline.mjs` and its PowerShell installer) is in the history
+up to commit `de2dd7c`.
 
 ## Related
 
 [claude-code-tts](https://github.com/spyrad/claude-code-tts) - makes Claude Code read its
-answers aloud on Windows, built the same way.
+answers aloud on Windows.
 
 ## License
 

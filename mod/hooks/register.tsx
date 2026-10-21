@@ -1,6 +1,6 @@
-// Das Layout von src/statusline.mjs als Band unter dem Prompt.
-// Quelle der Zahlen ist $.session.usage() - dieselben Werte, die Claude Code
-// der command-Statusleiste als JSON auf stdin gibt.
+// Die Statusleiste als Band unter dem Prompt, im Layout der frueheren
+// command-Statusleiste (statusline.mjs, in der Git-Historie bis de2dd7c).
+// Quelle der Zahlen ist $.session.usage().
 //
 // Unter dem Prompt laesst die Engine nur die Hinweiszeile (PromptHint) zeichnen:
 // das Band tritt an ihre Stelle, ihr Text ("? for shortcuts", "esc to interrupt")

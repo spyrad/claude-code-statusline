@@ -1,0 +1,6 @@
+{
+  "name": "claude-code-statusline",
+  "description": "A status line for Claude Code, built as a mod",
+  "owner": { "name": "spyrad" },
+  "plugins": [{ "name": "statusline-mod", "source": "./mod" }]
+}

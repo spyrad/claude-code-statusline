@@ -1,6 +1,7 @@
 {
   "name": "statusline-mod",
-  "version": "0.5.0",
-  "description": "Die Statusleiste aus statusline.mjs als Band unter dem Prompt, mit Cache-Countdown",
+  "version": "1.0.0",
+  "description": "Status line below the prompt: model, branch, rate-limit window, context and prompt-cache countdown",
+  "author": { "name": "spyrad" },
   "types": "./types/index.d.ts"
 }
