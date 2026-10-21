@@ -286,15 +286,15 @@ export const register: Register = on => {
           <Text>{s.repo}</Text>
           {s.branch && <Text dimColor>{` ${GLYPHS.branch} `}</Text>}
           {s.branch && <Text>{s.branch}</Text>}
+          {s.herdrPane && sep}
+          {s.herdrPane && <Text dimColor>herdr </Text>}
+          {s.herdrPane && <Text>{s.herdrPane}</Text>}
           {sep}
           <Text dimColor>Laufzeit </Text>
           <Text>{fmtDuration(s.runtimeMs)}</Text>
           {s.costUsd != null && sep}
           {s.costUsd != null && <Text dimColor>Kosten </Text>}
           {s.costUsd != null && <Text>{`$${dec(s.costUsd, 2)}`}</Text>}
-          {s.herdrPane && sep}
-          {s.herdrPane && <Text dimColor>herdr </Text>}
-          {s.herdrPane && <Text>{s.herdrPane}</Text>}
         </Text>
         <Text wrap="truncate-end">
           {label('Fenster')}

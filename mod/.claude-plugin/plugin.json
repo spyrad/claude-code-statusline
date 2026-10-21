@@ -1,6 +1,6 @@
 {
   "name": "statusline-mod",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Status line below the prompt: model, branch, rate-limit window, context and prompt-cache countdown",
   "author": { "name": "spyrad" },
   "types": "./types/index.d.ts"

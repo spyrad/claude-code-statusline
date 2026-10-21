@@ -57,10 +57,7 @@ test('das Band zeigt Modell, Branch, Fenster, Last, Context, Kosten und Herdr-Pa
 
   for (const part of [
     'Opus 5.5 · 1M',
-    'claude-code-statusline ⎇ main',
-    'Laufzeit 12m00s',
-    'Kosten $1,23',
-    'herdr w3:p2',
+    'claude-code-statusline ⎇ main  │  herdr w3:p2  │  Laufzeit 12m00s  │  Kosten $1,23',
     '  60%  noch 2h00m',
     'Session 30% (0,50×)',
     'Woche 12%',
