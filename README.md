@@ -118,6 +118,30 @@ path.
 **The cost line says `(scan…)`.** The cache is still being built. It scans within a time
 budget per run and picks up where it left off, so the number settles after a few redraws.
 
+## Mod variant (early access)
+
+`mod/` holds the same three lines as a Claude Code mod instead of a command. It draws
+below the prompt in place of the hint line (`? for shortcuts`, which follows dimmed as a
+fourth row), refreshes every five seconds, takes its numbers from the session directly
+and adds a prompt-cache countdown to line 3 (`Cache 1h warm noch 42m10s`). It has no cost
+line beyond the session's own spend, and it draws on the terminal and desktop app only.
+
+Load it in every session by naming the folder in the `env` block of
+`~/.claude/settings.json`, and remove the `statusLine` entry so the lines do not show
+twice:
+
+```json
+"env": {
+  "CLAUDE_CODE_PLUGIN_DIRS": "C:\\path\\to\\claude-code-statusline\\mod"
+}
+```
+
+To work out the cache's lifetime it reads the current session's transcript
+(`~/.claude/projects/<project>/<session>.jsonl`, up to 4 MiB) and looks only at the
+cache-write token counts. Nothing leaves the machine.
+
+Check and test it with `claude plugin validate mod` and `claude plugin test mod`.
+
 ## Development
 
 Sources live in `src/`. `install.ps1` is generated — edit `src/install-template.ps1` and
