@@ -1,4 +1,5 @@
 import { expect, mock, test } from 'claude-code/testing'
+import type { TestBody } from 'claude-code/testing'
 
 const NOW = Date.parse('2026-10-20T12:00:00Z')
 
@@ -86,6 +87,7 @@ test('der Cache-Countdown laeuft ab der letzten Anfrage, mit der TTL aus dem Tra
   on('session.usage', () => ({
     value: { startedAt: NOW, context: { window: 1_000_000 }, rateLimits: [] },
   }))
+  on('store.set', () => ({ value: undefined }))
   on('fs.exists', (_, e) => ({ value: same(e.path, transcript) }))
   on('fs.stat', () => ({ value: { kind: 'file', size: 100, mtimeMs: 0, isLink: false } as const }))
   on('fs.read', () => ({
@@ -135,4 +137,47 @@ test('der Cache-Countdown laeuft ab der letzten Anfrage, mit der TTL aus dem Tra
   await clock.advance(5_000)
   expect(await line()).toContain('Cache 5m? –')
   await ui.unmount()
+})
+
+/** Ein Transcript ueber 4 MiB: die TTL muss aus Einstellung oder Store kommen. */
+async function bigTranscript(
+  $: Parameters<TestBody>[0],
+  on: Parameters<TestBody>[1],
+  settings: string | null,
+  lastTtl: string | undefined,
+) {
+  mock.env(on, { USERPROFILE: 'C:/Users/x' })
+  const transcript = 'C:/Users/x/.claude/projects/C--proj-repo/sid.jsonl'
+  const same = (a: string, b: string) => a.replace(/\\/g, '/') === b
+  on('ui.status', () => ({ value: undefined }))
+  on('clock.every', () => ({ value: undefined }))
+  on('clock.now', () => ({ value: NOW }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('session.cwd', () => ({ value: 'C:/proj/repo' }))
+  on('session.root', () => ({ value: 'C:/proj/repo' }))
+  on('session.id', () => ({ value: 'sid' }))
+  on('session.model', () => ({ value: 'claude-opus-5-5' }))
+  on('session.usage', () => ({
+    value: { startedAt: NOW, context: { window: 1_000_000 }, rateLimits: [] },
+  }))
+  on('store.get', () => ({ value: lastTtl }))
+  on('fs.exists', (_, e) => ({ value: same(e.path, transcript) }))
+  on('fs.stat', () => ({ value: { kind: 'file', size: 5_000_000, mtimeMs: 0, isLink: false } as const }))
+  on('fs.read', (_, e) => {
+    if (settings !== null && same(e.path, 'C:/Users/x/.claude/settings.json')) return { value: settings }
+    throw new Error('ENOENT')
+  })
+  await $.session.start({ cwd: 'C:/proj/repo', surface: 'terminal', isInteractive: true })
+  const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  const line = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('')
+  await ui.unmount()
+  return line
+}
+
+test('ist das Transcript zu gross, gilt die eingestellte TTL', async ($, on) => {
+  expect(await bigTranscript($, on, '{"promptCacheTtl":"1h"}', '5m')).toContain('Cache 1h \u2013')
+})
+
+test('ohne Einstellung gilt die zuletzt gesehene TTL, markiert mit "?"', async ($, on) => {
+  expect(await bigTranscript($, on, null, '1h')).toContain('Cache 1h? \u2013')
 })

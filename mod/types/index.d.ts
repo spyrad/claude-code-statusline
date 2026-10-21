@@ -21,8 +21,13 @@ export type Snapshot = {
 export type CacheInfo = {
   /** Als die letzte Anfrage mit Antwort abging, in $.clock.now()-Millisekunden. */
   lastRequestAt: number | null
-  /** Aus dem Transcript gelesen; null, solange keine Schreibung gesehen wurde. */
+  /**
+   * Aus dem Transcript gelesen, sonst aus der Einstellung, sonst die zuletzt
+   * gesehene; null, solange keine Quelle etwas hergibt.
+   */
   ttl: '5m' | '1h' | null
+  /** true, wenn die TTL nur die zuletzt gesehene ist: das Band markiert sie mit "?". */
+  guess: boolean
 }
 
 declare module 'claude-code' {

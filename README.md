@@ -52,8 +52,10 @@ described above. The window bar is deliberately neutral: it shows time, not load
 
 **Line 3** — context usage, as a bar, a percentage, and tokens used against the window
 size; then the prompt cache: its lifetime (`5m` or `1h`) and how long it stays warm after
-the last request, or how long it has been cold. Until the lifetime is known it shows
-`5m?`.
+the last request, or how long it has been cold. The lifetime comes from the session's
+transcript; when that is too large to read (over 4 MiB), from your `promptCacheTtl`
+setting or the matching environment variables, and failing that the last one seen,
+marked `?`. With nothing to go on it shows `5m?`.
 
 **Line 4** — Claude Code's own hint line (`? for shortcuts`, `esc to interrupt`), dimmed.
 The mod draws in its place, because that is the only spot below the prompt a mod can
@@ -68,7 +70,9 @@ Everything runs locally and nothing is sent anywhere.
 
 To learn the cache lifetime, the mod reads the current session's transcript
 (`~/.claude/projects/<project>/<session>.jsonl`, up to 4 MiB) and looks only at the
-cache-write token counts. The branch comes from reading `.git/HEAD` directly.
+cache-write token counts. It also reads `promptCacheTtl` from `~/.claude/settings.json`
+and keeps the last lifetime it saw in its own store. The branch comes from reading
+`.git/HEAD` directly.
 
 ## Uninstall
 

@@ -31,10 +31,9 @@ const GLYPHS = {
 }
 
 const snapshot = atom({ plugin: 'statusline-mod', key: 'snapshot' } as const, null)
-const cache = atom({ plugin: 'statusline-mod', key: 'cache' } as const, {
-  lastRequestAt: null,
-  ttl: null,
-} as CacheInfo)
+const NO_CACHE: CacheInfo = { lastRequestAt: null, ttl: null, guess: false }
+const cache = atom({ plugin: 'statusline-mod', key: 'cache' } as const, NO_CACHE)
+const LAST_TTL_KEY = 'lastTtl' // $.store, ueber Sessions hinweg
 
 // ------------------------------------------------------------------- Helfer
 
@@ -115,19 +114,24 @@ async function gitBranch($: EngineInterface, startDir: string): Promise<string |
 
 // ------------------------------------------------------------ Prompt-Cache
 
+const isTtl = (v: unknown): v is '5m' | '1h' => v === '5m' || v === '1h'
+
+/** Der Konfigurationsordner von Claude Code: CLAUDE_CONFIG_DIR oder ~/.claude. */
+async function configDir($: EngineInterface): Promise<string> {
+  const [dir, profile, home] = await Promise.all([
+    $.env.get('CLAUDE_CONFIG_DIR'),
+    $.env.get('USERPROFILE'),
+    $.env.get('HOME'),
+  ])
+  return dir ?? `${profile ?? home ?? ''}/.claude`
+}
+
 /**
  * Das Transcript der Session: ~/.claude/projects/<root, Sonderzeichen als ->/<id>.jsonl.
  * Liegt es nicht dort, wird in den Projektordnern nach <id>.jsonl gesucht.
  */
 async function transcriptPath($: EngineInterface): Promise<string | null> {
-  const [configDir, profile, home, root, id] = await Promise.all([
-    $.env.get('CLAUDE_CONFIG_DIR'),
-    $.env.get('USERPROFILE'),
-    $.env.get('HOME'),
-    $.session.root(),
-    $.session.id(),
-  ])
-  const base = configDir ?? `${profile ?? home ?? ''}/.claude`
+  const [base, root, id] = await Promise.all([configDir($), $.session.root(), $.session.id()])
   const projects = `${base}/projects`
   const direct = `${projects}/${root.replace(/[^a-zA-Z0-9]/g, '-')}/${id}.jsonl`
   if (await $.fs.exists(direct)) return direct
@@ -164,9 +168,46 @@ async function readCacheTtl($: EngineInterface): Promise<CacheInfo['ttl']> {
   return null
 }
 
+/**
+ * Die eingestellte TTL, in der Rangfolge von Claude Code: FORCE_PROMPT_CACHING_5M,
+ * CLAUDE_CODE_PROMPT_CACHE_TTL, promptCacheTtl in settings.json, ENABLE_PROMPT_CACHING_1H.
+ * null, wenn nichts eingestellt ist: dann entscheidet das Konto.
+ */
+async function configuredTtl($: EngineInterface): Promise<CacheInfo['ttl']> {
+  const [force5m, envTtl, enable1h] = await Promise.all([
+    $.env.get('FORCE_PROMPT_CACHING_5M'),
+    $.env.get('CLAUDE_CODE_PROMPT_CACHE_TTL'),
+    $.env.get('ENABLE_PROMPT_CACHING_1H'),
+  ])
+  if (force5m === '1') return '5m'
+  if (isTtl(envTtl)) return envTtl
+  try {
+    const settings = JSON.parse(await $.fs.read(`${await configDir($)}/settings.json`))
+    if (isTtl(settings?.promptCacheTtl)) return settings.promptCacheTtl
+  } catch {
+    /* keine oder unlesbare settings.json */
+  }
+  return enable1h === '1' ? '1h' : null
+}
+
+/**
+ * TTL in dieser Reihenfolge: aus dem Transcript, aus der Einstellung, die zuletzt
+ * gesehene (als Vermutung). Ein Transcript ueber 4 MiB ist nicht lesbar.
+ */
 const refreshTtl = async ($: EngineInterface) => {
-  const ttl = await readCacheTtl($)
-  if (ttl) await update($, cache, c => ({ ...c, ttl }))
+  try {
+    const seen = await readCacheTtl($)
+    if (seen) {
+      await $.store.set(LAST_TTL_KEY, seen)
+      return await update($, cache, c => ({ ...c, ttl: seen, guess: false }))
+    }
+    const configured = await configuredTtl($)
+    if (configured) return await update($, cache, c => ({ ...c, ttl: configured, guess: false }))
+    const last = await $.store.get(LAST_TTL_KEY)
+    if (isTtl(last)) await update($, cache, c => ({ ...c, ttl: last, guess: true }))
+  } catch {
+    /* bisherigen Wert behalten */
+  }
 }
 
 // ---------------------------------------------------------------- Messung
@@ -235,7 +276,7 @@ export const register: Register = on => {
   on('session.end', async ($, e, next) => {
     const ended = await next(e)
     if (e.reason === 'clear' || e.reason === 'resume') {
-      await update($, cache, () => ({ lastRequestAt: null, ttl: null }))
+      await update($, cache, () => NO_CACHE)
     }
     return ended
   })
@@ -343,7 +384,7 @@ export const register: Register = on => {
           </Text>
           <Text dimColor>{`  ${fmtTok(s.ctxTokens)}/${fmtTok(s.ctxWindow)}`}</Text>
           {dot}
-          <Text dimColor>{`Cache ${c.ttl ?? '5m?'} `}</Text>
+          <Text dimColor>{`Cache ${c.ttl ?? '5m'}${c.ttl == null || c.guess ? '?' : ''} `}</Text>
           {cacheLeft == null ? (
             <Text dimColor>{GLYPHS.dash}</Text>
           ) : cacheLeft <= 0 ? (
