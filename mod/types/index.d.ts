@@ -13,7 +13,6 @@ export type Snapshot = {
   ctxPct: number | null
   ctxTokens: number
   ctxWindow: number
-  costUsd: number | null
   herdrPane: string | null
   /** Vorlesen aus claude-code-tts: an, aus, oder null, wenn es nicht installiert ist. */
   tts: 'on' | 'off' | null

@@ -13,7 +13,7 @@ const BAND = {
   },
 } as const
 
-test('das Band zeigt Modell, Branch, Fenster, Last, Context, Kosten und Herdr-Pane', async ($, on) => {
+test('das Band zeigt Modell, Branch, Fenster, Last, Context und Herdr-Pane', async ($, on) => {
   // Jeder Hook hier steht fuer die Engine; ein Aufruf auf `$` wird `{ value }` beantwortet.
   const shown: (string | undefined)[] = []
   on('ui.status', (_, e) => (shown.push(e.text), { value: undefined }))
@@ -58,7 +58,7 @@ test('das Band zeigt Modell, Branch, Fenster, Last, Context, Kosten und Herdr-Pa
 
   for (const part of [
     'Opus 5.5 · 1M',
-    'claude-code-statusline ⎇ main  │  herdr w3:p2  │  Laufzeit 12m00s  │  Kosten $1,23',
+    'claude-code-statusline ⎇ main  │  herdr w3:p2  │  Laufzeit 12m00s',
     '  60%  noch 2h00m',
     'Session 30% (0,50×)',
     'Woche 12%',

@@ -6,7 +6,7 @@ rate-limit window is left, how full the context is, and how long the prompt cach
 warm.
 
 ```
-Model   Opus 5.5 · 1M  │  claude-code-statusline ⎇ main  │  Vorlesen an  │  Laufzeit 59m02s  │  Kosten $2,30
+Model   Opus 5.5 · 1M  │  claude-code-statusline ⎇ main  │  Vorlesen an  │  Laufzeit 59m02s
 Fenster [▰▰▰▰▰▰▰▰▰▰▰▱▱▱]  82%  noch 55m02s  ·  Session 11% (0,13×)  ·  Woche 5%
 Context [▰▱▱▱▱▱▱▱▱▱▱▱▱▱]   8%  87,2k/1,0M  ·  Cache 1h warm noch 42m10s
 ? for shortcuts
@@ -41,8 +41,7 @@ the terminal and the desktop app only.
 ## What the lines show
 
 **Line 1** — the model (shortened, `claude-opus-5-5[1m]` becomes `Opus 5.5 · 1M`), the
-folder name with the current branch, how long this session has been running, and what it
-has cost so far. Outside a git repository the folder name is shown without a branch. When
+folder name with the current branch and how long this session has been running. Outside a git repository the folder name is shown without a branch. When
 Claude Code runs inside a Herdr pane, the pane ID (`herdr w3:p1`) is appended, read from
 `HERDR_PANE_ID`. With [claude-code-tts](https://github.com/spyrad/claude-code-tts)
 installed, `Vorlesen an` or `Vorlesen aus` follows the branch: off while the file

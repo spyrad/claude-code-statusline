@@ -264,7 +264,6 @@ async function measure($: EngineInterface): Promise<Snapshot> {
     ctxPct: u.context.percent ?? null,
     ctxTokens: u.context.tokens ?? 0,
     ctxWindow: u.context.window,
-    costUsd: u.cost?.usd ?? null,
     herdrPane: herdrEnv === '1' && herdrPane ? herdrPane : null,
     tts,
   }
@@ -356,9 +355,6 @@ export const register: Register = on => {
           {sep}
           <Text dimColor>Laufzeit </Text>
           <Text>{fmtDuration(s.runtimeMs)}</Text>
-          {s.costUsd != null && sep}
-          {s.costUsd != null && <Text dimColor>Kosten </Text>}
-          {s.costUsd != null && <Text>{`$${dec(s.costUsd, 2)}`}</Text>}
         </Text>
         <Text wrap="truncate-end">
           {label('Fenster')}
