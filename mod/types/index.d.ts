@@ -15,6 +15,8 @@ export type Snapshot = {
   ctxWindow: number
   costUsd: number | null
   herdrPane: string | null
+  /** Vorlesen aus claude-code-tts: an, aus, oder null, wenn es nicht installiert ist. */
+  tts: 'on' | 'off' | null
 }
 
 /** Prompt-Cache des Hauptthreads: wann er zuletzt aufgefrischt wurde, mit welcher TTL. */

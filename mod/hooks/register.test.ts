@@ -181,3 +181,38 @@ test('ist das Transcript zu gross, gilt die eingestellte TTL', async ($, on) => 
 test('ohne Einstellung gilt die zuletzt gesehene TTL, markiert mit "?"', async ($, on) => {
   expect(await bigTranscript($, on, null, '1h')).toContain('Cache 1h? \u2013')
 })
+
+/** Zeile 1 mit claude-code-tts: installiert, und tts-off liegt daneben oder nicht. */
+async function ttsLine($: Parameters<TestBody>[0], on: Parameters<TestBody>[1], off: boolean) {
+  const files = ['C:/Users/x/.claude/hooks/speak-last-answer.ps1', ...(off ? ['C:/Users/x/.claude/tts-off'] : [])]
+  mock.env(on, { USERPROFILE: 'C:/Users/x' })
+  on('ui.status', () => ({ value: undefined }))
+  on('clock.every', () => ({ value: undefined }))
+  on('clock.now', () => ({ value: NOW }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('session.cwd', () => ({ value: 'C:/proj/repo' }))
+  on('session.root', () => ({ value: 'C:/proj/repo' }))
+  on('session.id', () => ({ value: 'sid' }))
+  on('session.model', () => ({ value: 'claude-opus-5-5' }))
+  on('session.usage', () => ({
+    value: { startedAt: NOW, context: { window: 1_000_000 }, rateLimits: [] },
+  }))
+  on('store.get', () => ({ value: undefined }))
+  on('fs.exists', (_, e) => ({ value: files.includes(e.path.replace(/\\/g, '/')) }))
+  on('fs.read', () => {
+    throw new Error('ENOENT')
+  })
+  await $.session.start({ cwd: 'C:/proj/repo', surface: 'terminal', isInteractive: true })
+  const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  const line = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('')
+  await ui.unmount()
+  return line
+}
+
+test('ist claude-code-tts installiert, zeigt Zeile 1 "Vorlesen an"', async ($, on) => {
+  expect(await ttsLine($, on, false)).toContain('repo  │  Vorlesen an  │  Laufzeit 0s')
+})
+
+test('liegt tts-off im Konfigurationsordner, zeigt Zeile 1 "Vorlesen aus"', async ($, on) => {
+  expect(await ttsLine($, on, true)).toContain('Vorlesen aus')
+})

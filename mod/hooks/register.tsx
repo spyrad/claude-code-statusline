@@ -210,16 +210,34 @@ const refreshTtl = async ($: EngineInterface) => {
   }
 }
 
+// ---------------------------------------------------------------- Vorlesen
+
+/**
+ * Zustand von claude-code-tts: installiert, wenn sein Hook-Skript im
+ * Konfigurationsordner liegt; aus, solange die Datei tts-off daneben liegt
+ * (Ctrl+Alt+T legt sie an und loescht sie wieder). null ohne Installation.
+ */
+async function ttsState($: EngineInterface): Promise<Snapshot['tts']> {
+  try {
+    const dir = await configDir($)
+    if (!(await $.fs.exists(`${dir}/hooks/speak-last-answer.ps1`))) return null
+    return (await $.fs.exists(`${dir}/tts-off`)) ? 'off' : 'on'
+  } catch {
+    return null
+  }
+}
+
 // ---------------------------------------------------------------- Messung
 
 async function measure($: EngineInterface): Promise<Snapshot> {
-  const [u, model, cwd, now, herdrEnv, herdrPane] = await Promise.all([
+  const [u, model, cwd, now, herdrEnv, herdrPane, tts] = await Promise.all([
     $.session.usage(),
     $.session.model(),
     $.session.cwd(),
     $.clock.now(),
     $.env.get('HERDR_ENV'),
     $.env.get('HERDR_PANE_ID'),
+    ttsState($),
   ])
 
   const five = u.rateLimits.find(r => r.kind === 'five_hour')
@@ -248,6 +266,7 @@ async function measure($: EngineInterface): Promise<Snapshot> {
     ctxWindow: u.context.window,
     costUsd: u.cost?.usd ?? null,
     herdrPane: herdrEnv === '1' && herdrPane ? herdrPane : null,
+    tts,
   }
 }
 
@@ -327,6 +346,10 @@ export const register: Register = on => {
           <Text>{s.repo}</Text>
           {s.branch && <Text dimColor>{` ${GLYPHS.branch} `}</Text>}
           {s.branch && <Text>{s.branch}</Text>}
+          {s.tts && sep}
+          {s.tts && <Text dimColor>Vorlesen </Text>}
+          {s.tts === 'on' && <Text color="success">an</Text>}
+          {s.tts === 'off' && <Text dimColor>aus</Text>}
           {s.herdrPane && sep}
           {s.herdrPane && <Text dimColor>herdr </Text>}
           {s.herdrPane && <Text>{s.herdrPane}</Text>}
