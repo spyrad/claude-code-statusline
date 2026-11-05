@@ -34,6 +34,7 @@ test('das Band zeigt Modell, Branch, Fenster, Last, Context und Herdr-Pane', asy
     value: { kind: 'dir', size: 0, mtimeMs: 0, isLink: false } as const,
   }))
   on('fs.read', () => ({ value: 'ref: refs/heads/main\n' }))
+  on('settings.read', () => ({ value: { outputStyle: 'Gezielt' } }))
   on('session.usage', () => ({
     value: {
       startedAt: NOW - 12 * 60_000,
@@ -58,7 +59,7 @@ test('das Band zeigt Modell, Branch, Fenster, Last, Context und Herdr-Pane', asy
 
   for (const part of [
     'Opus 5.5 · 1M',
-    'claude-code-statusline ⎇ main  │  herdr w3:p2  │  Laufzeit 12m00s',
+    'claude-code-statusline ⎇ main  │  herdr w3:p2  │  Stil Gezielt  │  Laufzeit 12m00s',
     '  60%  noch 2h00m',
     'Session 30% (0,50×)',
     'Woche 12%',
@@ -210,7 +211,7 @@ async function ttsLine($: Parameters<TestBody>[0], on: Parameters<TestBody>[1], 
 }
 
 test('ist claude-code-tts installiert, zeigt Zeile 1 "Vorlesen an"', async ($, on) => {
-  expect(await ttsLine($, on, false)).toContain('repo  │  Vorlesen an  │  Laufzeit 0s')
+  expect(await ttsLine($, on, false)).toContain('repo  │  Vorlesen an  │  Stil Default  │  Laufzeit 0s')
 })
 
 test('liegt tts-off im Konfigurationsordner, zeigt Zeile 1 "Vorlesen aus"', async ($, on) => {

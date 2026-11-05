@@ -227,10 +227,20 @@ async function ttsState($: EngineInterface): Promise<Snapshot['tts']> {
   }
 }
 
+/** Der eingestellte Output-Style, ueber alle Einstellungsquellen gemischt; null ohne Eintrag. */
+async function outputStyle($: EngineInterface): Promise<string | null> {
+  try {
+    const name = await $.settings.read({ key: 'outputStyle' })
+    return typeof name === 'string' && name ? name : null
+  } catch {
+    return null
+  }
+}
+
 // ---------------------------------------------------------------- Messung
 
 async function measure($: EngineInterface): Promise<Snapshot> {
-  const [u, model, cwd, now, herdrEnv, herdrPane, tts] = await Promise.all([
+  const [u, model, cwd, now, herdrEnv, herdrPane, tts, style] = await Promise.all([
     $.session.usage(),
     $.session.model(),
     $.session.cwd(),
@@ -238,6 +248,7 @@ async function measure($: EngineInterface): Promise<Snapshot> {
     $.env.get('HERDR_ENV'),
     $.env.get('HERDR_PANE_ID'),
     ttsState($),
+    outputStyle($),
   ])
 
   const five = u.rateLimits.find(r => r.kind === 'five_hour')
@@ -266,6 +277,7 @@ async function measure($: EngineInterface): Promise<Snapshot> {
     ctxWindow: u.context.window,
     herdrPane: herdrEnv === '1' && herdrPane ? herdrPane : null,
     tts,
+    outputStyle: style,
   }
 }
 
@@ -345,13 +357,16 @@ export const register: Register = on => {
           <Text>{s.repo}</Text>
           {s.branch && <Text dimColor>{` ${GLYPHS.branch} `}</Text>}
           {s.branch && <Text>{s.branch}</Text>}
+          {s.herdrPane && sep}
+          {s.herdrPane && <Text dimColor>herdr </Text>}
+          {s.herdrPane && <Text>{s.herdrPane}</Text>}
           {s.tts && sep}
           {s.tts && <Text dimColor>Vorlesen </Text>}
           {s.tts === 'on' && <Text color="success">an</Text>}
           {s.tts === 'off' && <Text dimColor>aus</Text>}
-          {s.herdrPane && sep}
-          {s.herdrPane && <Text dimColor>herdr </Text>}
-          {s.herdrPane && <Text>{s.herdrPane}</Text>}
+          {sep}
+          <Text dimColor>Stil </Text>
+          {s.outputStyle ? <Text>{s.outputStyle}</Text> : <Text dimColor>Default</Text>}
           {sep}
           <Text dimColor>Laufzeit </Text>
           <Text>{fmtDuration(s.runtimeMs)}</Text>

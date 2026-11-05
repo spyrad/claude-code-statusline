@@ -6,7 +6,7 @@ rate-limit window is left, how full the context is, and how long the prompt cach
 warm.
 
 ```
-Model   Opus 5.5 · 1M  │  claude-code-statusline ⎇ main  │  Vorlesen an  │  Laufzeit 59m02s
+Model   Opus 5.5 · 1M  │  claude-code-statusline ⎇ main  │  herdr w3:p1  │  Vorlesen an  │  Stil Gezielt  │  Laufzeit 59m02s
 Fenster [▰▰▰▰▰▰▰▰▰▰▰▱▱▱]  82%  noch 55m02s  ·  Session 11% (0,13×)  ·  Woche 5%
 Context [▰▱▱▱▱▱▱▱▱▱▱▱▱▱]   8%  87,2k/1,0M  ·  Cache 1h warm noch 42m10s
 ? for shortcuts
@@ -40,12 +40,19 @@ the terminal and the desktop app only.
 
 ## What the lines show
 
-**Line 1** — the model (shortened, `claude-opus-5-5[1m]` becomes `Opus 5.5 · 1M`), the
-folder name with the current branch and how long this session has been running. Outside a git repository the folder name is shown without a branch. When
-Claude Code runs inside a Herdr pane, the pane ID (`herdr w3:p1`) is appended, read from
-`HERDR_PANE_ID`. With [claude-code-tts](https://github.com/spyrad/claude-code-tts)
-installed, `Vorlesen an` or `Vorlesen aus` follows the branch: off while the file
-`~/.claude/tts-off` exists (Ctrl+Alt+T toggles it), so it updates within five seconds.
+**Line 1**, from left to right:
+
+- the model, shortened (`claude-opus-5-5[1m]` becomes `Opus 5.5 · 1M`)
+- the folder name with the current branch; outside a git repository without a branch
+- the Herdr pane ID (`herdr w3:p1`), read from `HERDR_PANE_ID`, when Claude Code runs
+  inside a Herdr pane
+- `Vorlesen an` or `Vorlesen aus`, when
+  [claude-code-tts](https://github.com/spyrad/claude-code-tts) is installed: off while the
+  file `~/.claude/tts-off` exists (Ctrl+Alt+T toggles it), so it updates within five
+  seconds
+- the output style (`Stil Gezielt`), the `outputStyle` setting merged over all settings
+  files, or `Stil Default` when none is set
+- how long this session has been running
 
 **Line 2** — how much of the five-hour rate-limit window has elapsed, how long is left,
 your usage against the five-hour and seven-day limits, and the consumption ratio
@@ -72,8 +79,9 @@ Everything runs locally and nothing is sent anywhere.
 To learn the cache lifetime, the mod reads the current session's transcript
 (`~/.claude/projects/<project>/<session>.jsonl`, up to 4 MiB) and looks only at the
 cache-write token counts. It also reads `promptCacheTtl` from `~/.claude/settings.json`
-and keeps the last lifetime it saw in its own store. The branch comes from reading
-`.git/HEAD` directly. For the read-aloud state it only checks whether
+and keeps the last lifetime it saw in its own store. The output style is the
+`outputStyle` key of the settings. The branch comes from reading `.git/HEAD` directly.
+For the read-aloud state it only checks whether
 `~/.claude/hooks/speak-last-answer.ps1` and `~/.claude/tts-off` exist.
 
 ## Uninstall
