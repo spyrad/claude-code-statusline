@@ -240,13 +240,15 @@ async function outputStyle($: EngineInterface): Promise<string | null> {
 // ---------------------------------------------------------------- Messung
 
 async function measure($: EngineInterface): Promise<Snapshot> {
-  const [u, model, cwd, now, herdrEnv, herdrPane, tts, style] = await Promise.all([
+  const [u, model, cwd, now, herdrEnv, herdrPane, hcTerminal, tts, style] = await Promise.all([
     $.session.usage(),
     $.session.model(),
     $.session.cwd(),
     $.clock.now(),
     $.env.get('HERDR_ENV'),
     $.env.get('HERDR_PANE_ID'),
+    // Die Herdr-App setzt weder HERDR_ENV noch HERDR_PANE_ID, sondern HC_TERMINAL_ID.
+    $.env.get('HC_TERMINAL_ID'),
     ttsState($),
     outputStyle($),
   ])
@@ -275,7 +277,7 @@ async function measure($: EngineInterface): Promise<Snapshot> {
     ctxPct: u.context.percent ?? null,
     ctxTokens: u.context.tokens ?? 0,
     ctxWindow: u.context.window,
-    herdrPane: herdrEnv === '1' && herdrPane ? herdrPane : null,
+    herdrPane: herdrEnv === '1' && herdrPane ? herdrPane : hcTerminal || null,
     tts,
     outputStyle: style,
   }

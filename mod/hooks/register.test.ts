@@ -217,3 +217,26 @@ test('ist claude-code-tts installiert, zeigt Zeile 1 "Vorlesen an"', async ($, o
 test('liegt tts-off im Konfigurationsordner, zeigt Zeile 1 "Vorlesen aus"', async ($, on) => {
   expect(await ttsLine($, on, true)).toContain('Vorlesen aus')
 })
+
+test('in der Herdr-App zeigt Zeile 1 die Terminal-ID aus HC_TERMINAL_ID', async ($, on) => {
+  mock.env(on, { HC_TERMINAL_ID: 't5' })
+  on('ui.status', () => ({ value: undefined }))
+  on('clock.every', () => ({ value: undefined }))
+  on('clock.now', () => ({ value: NOW }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('session.cwd', () => ({ value: 'C:/proj/repo' }))
+  on('session.model', () => ({ value: 'claude-opus-5-5' }))
+  on('session.usage', () => ({
+    value: { startedAt: NOW, context: { window: 1_000_000 }, rateLimits: [] },
+  }))
+  on('store.get', () => ({ value: undefined }))
+  on('fs.exists', () => ({ value: false }))
+  on('fs.read', () => {
+    throw new Error('ENOENT')
+  })
+  await $.session.start({ cwd: 'C:/proj/repo', surface: 'terminal', isInteractive: true })
+  const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  const line = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('')
+  await ui.unmount()
+  expect(line).toContain('repo  │  herdr t5  │  Stil Default')
+})

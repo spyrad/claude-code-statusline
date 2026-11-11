@@ -45,7 +45,8 @@ the terminal and the desktop app only.
 - the model, shortened (`claude-opus-5-5[1m]` becomes `Opus 5.5 · 1M`)
 - the folder name with the current branch; outside a git repository without a branch
 - the Herdr pane ID (`herdr w3:p1`), read from `HERDR_PANE_ID`, when Claude Code runs
-  inside a Herdr pane
+  inside a Herdr CLI pane; in the Herdr app the terminal ID (`herdr t5`), read from
+  `HC_TERMINAL_ID`
 - `Vorlesen an` or `Vorlesen aus`, when
   [claude-code-tts](https://github.com/spyrad/claude-code-tts) is installed: off while the
   file `~/.claude/tts-off` exists (Ctrl+Alt+T toggles it), so it updates within five
