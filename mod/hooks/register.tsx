@@ -191,6 +191,17 @@ async function configuredTtl($: EngineInterface): Promise<CacheInfo['ttl']> {
 }
 
 /**
+ * TTL ohne Transcript: die eingestellte, sonst die zuletzt gesehene (als Vermutung).
+ * ttl null, wenn beides fehlt.
+ */
+async function ttlWithoutTranscript($: EngineInterface): Promise<Pick<CacheInfo, 'ttl' | 'guess'>> {
+  const configured = await configuredTtl($)
+  if (configured) return { ttl: configured, guess: false }
+  const last = await $.store.get(LAST_TTL_KEY)
+  return isTtl(last) ? { ttl: last, guess: true } : { ttl: null, guess: false }
+}
+
+/**
  * TTL in dieser Reihenfolge: aus dem Transcript, aus der Einstellung, die zuletzt
  * gesehene (als Vermutung). Ein Transcript ueber 4 MiB ist nicht lesbar.
  */
@@ -201,10 +212,8 @@ const refreshTtl = async ($: EngineInterface) => {
       await $.store.set(LAST_TTL_KEY, seen)
       return await update($, cache, c => ({ ...c, ttl: seen, guess: false }))
     }
-    const configured = await configuredTtl($)
-    if (configured) return await update($, cache, c => ({ ...c, ttl: configured, guess: false }))
-    const last = await $.store.get(LAST_TTL_KEY)
-    if (isTtl(last)) await update($, cache, c => ({ ...c, ttl: last, guess: true }))
+    const fallback = await ttlWithoutTranscript($)
+    if (fallback.ttl) await update($, cache, c => ({ ...c, ...fallback }))
   } catch {
     /* bisherigen Wert behalten */
   }
@@ -305,10 +314,18 @@ export const register: Register = on => {
   })
 
   // Nach /clear oder einem Wechsel der Unterhaltung gilt der Cache der alten nicht mehr.
+  // Die TTL kommt sofort aus Einstellung oder Store; das Transcript ist noch das alte,
+  // die naechste Antwort liest es neu (session.measure).
   on('session.end', async ($, e, next) => {
     const ended = await next(e)
     if (e.reason === 'clear' || e.reason === 'resume') {
       await update($, cache, () => NO_CACHE)
+      try {
+        const fallback = await ttlWithoutTranscript($)
+        if (fallback.ttl) await update($, cache, c => ({ ...c, ...fallback }))
+      } catch {
+        /* TTL bleibt unbekannt */
+      }
     }
     return ended
   })

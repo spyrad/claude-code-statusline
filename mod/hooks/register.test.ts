@@ -146,6 +146,7 @@ async function bigTranscript(
   on: Parameters<TestBody>[1],
   settings: string | null,
   lastTtl: string | undefined,
+  clear = false,
 ) {
   mock.env(on, { USERPROFILE: 'C:/Users/x' })
   const transcript = 'C:/Users/x/.claude/projects/C--proj-repo/sid.jsonl'
@@ -154,6 +155,7 @@ async function bigTranscript(
   on('clock.every', () => ({ value: undefined }))
   on('clock.now', () => ({ value: NOW }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('session.end', (_, e) => ({ sessionId: e.sessionId }))
   on('session.cwd', () => ({ value: 'C:/proj/repo' }))
   on('session.root', () => ({ value: 'C:/proj/repo' }))
   on('session.id', () => ({ value: 'sid' }))
@@ -169,6 +171,7 @@ async function bigTranscript(
     throw new Error('ENOENT')
   })
   await $.session.start({ cwd: 'C:/proj/repo', surface: 'terminal', isInteractive: true })
+  if (clear) await $.session.end({ reason: 'clear', sessionId: 'sid', resume: { id: 'sid' } })
   const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
   const line = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('')
   await ui.unmount()
@@ -181,6 +184,14 @@ test('ist das Transcript zu gross, gilt die eingestellte TTL', async ($, on) => 
 
 test('ohne Einstellung gilt die zuletzt gesehene TTL, markiert mit "?"', async ($, on) => {
   expect(await bigTranscript($, on, null, '1h')).toContain('Cache 1h? \u2013')
+})
+
+test('nach /clear gilt sofort die eingestellte TTL', async ($, on) => {
+  expect(await bigTranscript($, on, '{"promptCacheTtl":"1h"}', '5m', true)).toContain('Cache 1h \u2013')
+})
+
+test('nach /clear ohne Einstellung gilt die zuletzt gesehene TTL, markiert mit "?"', async ($, on) => {
+  expect(await bigTranscript($, on, null, '1h', true)).toContain('Cache 1h? \u2013')
 })
 
 /** Zeile 1 mit claude-code-tts: installiert, und tts-off liegt daneben oder nicht. */
