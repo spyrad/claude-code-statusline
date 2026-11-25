@@ -13,6 +13,16 @@ const BAND = {
   },
 } as const
 
+/**
+ * Zeichnet das Band. Es tritt bewusst an die Stelle der Hinweiszeile: was darunter
+ * liegt (next(e)), ist nicht im Baum, sein Text folgt gedimmt als letzte Zeile.
+ */
+async function mountBand($: Parameters<TestBody>[0]) {
+  const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  expect(await ui.keepsBeneath()).toBe(false)
+  return ui
+}
+
 test('das Band zeigt Modell, Branch, Fenster, Last, Context und Herdr-Pane', async ($, on) => {
   // Jeder Hook hier steht fuer die Engine; ein Aufruf auf `$` wird `{ value }` beantwortet.
   const shown: (string | undefined)[] = []
@@ -53,7 +63,7 @@ test('das Band zeigt Modell, Branch, Fenster, Last, Context und Herdr-Pane', asy
   // Die alte Statuszeile aus Version 0.1.0 wird weggeraeumt.
   expect(shown.at(-1)).toBeUndefined()
 
-  const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  const ui = await mountBand($)
   const texts = (await ui.findAll({ type: 'Text' })).map(t => t.text)
   const line = texts.join('')
 
@@ -116,7 +126,7 @@ test('der Cache-Countdown laeuft ab der letzten Anfrage, mit der TTL aus dem Tra
   })
 
   await $.session.start({ cwd: 'C:/proj/repo', surface: 'terminal', isInteractive: true })
-  const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  const ui = await mountBand($)
   const line = async () => (await ui.findAll({ type: 'Text' })).map(t => t.text).join('')
 
   // Vor der ersten Anfrage gibt es nichts zu zaehlen; die TTL kommt aus dem Transcript.
@@ -172,7 +182,7 @@ async function bigTranscript(
   })
   await $.session.start({ cwd: 'C:/proj/repo', surface: 'terminal', isInteractive: true })
   if (clear) await $.session.end({ reason: 'clear', sessionId: 'sid', resume: { id: 'sid' } })
-  const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  const ui = await mountBand($)
   const line = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('')
   await ui.unmount()
   return line
@@ -215,7 +225,7 @@ async function ttsLine($: Parameters<TestBody>[0], on: Parameters<TestBody>[1], 
     throw new Error('ENOENT')
   })
   await $.session.start({ cwd: 'C:/proj/repo', surface: 'terminal', isInteractive: true })
-  const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  const ui = await mountBand($)
   const line = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('')
   await ui.unmount()
   return line
@@ -246,7 +256,7 @@ test('in der Herdr-App zeigt Zeile 1 die Terminal-ID aus HC_TERMINAL_ID', async 
     throw new Error('ENOENT')
   })
   await $.session.start({ cwd: 'C:/proj/repo', surface: 'terminal', isInteractive: true })
-  const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  const ui = await mountBand($)
   const line = (await ui.findAll({ type: 'Text' })).map(t => t.text).join('')
   await ui.unmount()
   expect(line).toContain('repo  │  herdr t5  │  Stil Default')
